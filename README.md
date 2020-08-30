@@ -21,7 +21,7 @@ cd timelapse
 composer install
 ```
 
-##Usage
+## Usage
 * Have a great idea for a timelapse
 * Shoot some images with the camera of your choice
 * Put them into a folder somewhere on your disk. Depending on the camera, the will be named DSCN1234.JPG or IMG001234
@@ -33,8 +33,8 @@ srcRootPath: "/home/user/Pictures/MyAwesomeTimelapse"
 output:
   # Temp files and the finished video will be generated here. This folder must not exist yet!
   path: "/home/user/Videos/Timelapse/SoAwesome"
-  # The resolution of the generated video. Make sure that the ratio fits the input images or the result will look
- stretched!
+  # The resolution of the generated video.
+  # Make sure that the ratio fits the input images or the result will look stretched!
   resolution:
     width: 1600
     height: 1200
@@ -73,8 +73,8 @@ If everything works as intended, you will see a progress bar, then some ffmpeg o
  blending images. This reduces flickering if source and target frame rate do not match, but it can **not** create
   content you did not photograph!
 * For testing your timelapse, reduce resolution and fps to get a quick preview of the video. If you think you have it
- right, set the desired resolution and frame rate. And wait... processing 5000 high resolution images is not a real
- -time experience...
+ right, set the desired resolution and frame rate. And wait... processing 5000 high resolution images is not a
+ real-time experience...
 
  ## Adding more features
  ### Zooming
@@ -119,15 +119,16 @@ Then, we watch the sun using its powerful photons to turn the water into gas. He
 
 In between, I was bored and added some more water, this is shown in less speed. Then, more evaporation.
 
-In the end, we zoom in at slower speed, as the last puddle of water evaporates.
+In the end, we zoom in at slower speed as the last puddle of water evaporates.
 
-The zoom is given as percentages, so the zoom will go to the area of 47 to 77% of the image and 18 to 38% in the
+The zoom is given as percentages, so the zoom will go to the area of 47 to 77% of the image and 18 to 48% in the
  vertical.
 
 Do not zoom in too much unless you have really high resolution and high quality input!
 
 ## Options
-* `--force` - If you run the command repeatedly because you before you do that, if target folder is set to '/', you
- might have a surprise otherwise...
+* `--force` - If you run the command repeatedly it will fail the second time because the target folder already
+ exists. Use the force the delete it before it creates it again. CHECK YOUR CONFIG before you do that, if target
+  folder is  set to '/', you might have a surprise otherwise...
 * `--keepTempImages` - By default, the temporary images rendered will be deleted after the video is created. Use this
  switch to keep them.
