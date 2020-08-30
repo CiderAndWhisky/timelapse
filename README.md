@@ -67,14 +67,14 @@ If everything works as intended, you will see a progress bar, then some ffmpeg o
 
 ```
 ## Important notes
-* Make sure you have at least `fps * duration` individual images. So, for a 20 second timelapse with 30 frames per
+* Make sure you have at least `fps * duration` individual images. So, for a 20-second timelapse with 30 frames per
  second, you need at least 600 images.
 * If you have more or less than the required number of images, `timelapse` will create intermediate images by
  blending images. This reduces flickering if source and target frame rate do not match, but it can **not** create
   content you did not photograph!
 * For testing your timelapse, reduce resolution and fps to get a quick preview of the video. If you think you have it
- right, set the desired resolution and frame rate. And wait... processing 5000 high resolution images is not a
- real-time experience...
+ right, set the desired resolution and frame rate. Then: Grab a coffee... processing 5000 high resolution images is
+  not a real-time experience...
 
  ## Adding more features
  ### Zooming
@@ -128,7 +128,7 @@ Do not zoom in too much unless you have really high resolution and high quality 
 
 ## Options
 * `--force` - If you run the command repeatedly it will fail the second time because the target folder already
- exists. Use the force the delete it before it creates it again. CHECK YOUR CONFIG before you do that, if target
+ exists. Use the force to delete it before it creates it again. CHECK YOUR CONFIG before you do that, if target
   folder is  set to '/', you might have a surprise otherwise...
 * `--keepTempImages` - By default, the temporary images rendered will be deleted after the video is created. Use this
  switch to keep them.
