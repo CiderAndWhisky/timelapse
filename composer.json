@@ -1,0 +1,42 @@
+{
+  "name": "vecchio/timelapse",
+  "type": "project",
+  "license": "proprietary",
+  "authors": [
+    {
+      "name": "Alexander Reifinger",
+      "email": "timelapse@reifinger.de"
+    }
+  ],
+  "require": {
+    "php": "7.4.*",
+    "ext-imagick": "*",
+    "symfony/config": "^5.1",
+    "symfony/console": "5.1.*",
+    "symfony/dependency-injection": "^5.1",
+    "symfony/dotenv": "5.1.*",
+    "symfony/framework-bundle": "^5.1",
+    "symfony/yaml": "5.1.*"
+  },
+  "require-dev": {
+    "phpstan/phpstan": "^0.12.40",
+    "roave/security-advisories": "dev-master"
+  },
+  "config": {
+    "preferred-install": {
+      "*": "dist"
+    },
+    "sort-packages": true
+  },
+  "autoload": {
+    "psr-4": {
+      "Reifinger\\": "src/"
+    }
+  },
+  "scripts": {
+    "check": [
+      "@phpstan"
+    ],
+    "phpstan": "phpstan analyse src --level max"
+  }
+}
