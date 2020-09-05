@@ -1,6 +1,9 @@
 # timelapse
 **tl;dr**: Create a timelapse video from a bunch of input files using ffmpeg
 
+[![Example video](http://img.youtube.com/vi/NqrSRqagNSY/0.jpg)](http://www.youtube.com/watch?v=NqrSRqagNSY "Example
+ video")
+
 To my surprise, there seems to be no free tool to combine a bunch of images to a video. Of course, there is
  ffmpeg, but I wanted  bit more - multiple scenes, zooming in to the focus area, cropping the source images, etc.
 

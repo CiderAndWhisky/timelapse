@@ -27,6 +27,7 @@ class FrameRenderCommand extends Command
         $this->imageWriterService = $imageWriterService;
     }
 
+    /** @noinspection ReturnTypeCanBeDeclaredInspection */
     protected function configure()
     {
         parent::configure();

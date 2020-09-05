@@ -36,6 +36,7 @@ class TimelapseGeneratorCommand extends Command
         $this->pathService = $imagePathService;
     }
 
+    /** @noinspection ReturnTypeCanBeDeclaredInspection */
     protected function configure()
     {
         parent::configure();
