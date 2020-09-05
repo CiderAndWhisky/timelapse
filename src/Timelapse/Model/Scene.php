@@ -12,4 +12,5 @@ class Scene
     public int $endNr;
     public string $imageNameTemplate;
     public Zoom $zoomTo;
+    public Zoom $zoomFrom;
 }

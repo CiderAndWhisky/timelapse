@@ -14,4 +14,9 @@ class Vector2D
         $this->x = $x;
         $this->y = $y;
     }
+
+    public function equals(Vector2D $other): bool
+    {
+        return $this->x === $other->x && $this->y === $other->y;
+    }
 }

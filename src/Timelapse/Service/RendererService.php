@@ -12,12 +12,11 @@ use Reifinger\Timelapse\Model\Zoom;
 
 class RendererService
 {
-    private Zoom $startZoom;
+    private Zoom $zoomFrom;
     private Config $config;
 
     public function __construct(Config $config)
     {
-        $this->startZoom = Zoom::default();
         $this->config = $config;
     }
 
@@ -33,7 +32,7 @@ class RendererService
 
         $baseImageNumber = $scene->startNr + (int)$imageNumberInScene;
         $zoom = $this->calculateZoom(
-                $this->startZoom,
+                $scene->zoomFrom,
                 $scene->zoomTo,
                 $progress
         );
@@ -41,16 +40,13 @@ class RendererService
         $targetWidth = (int)$this->config->output->resolution->x;
         $targetHeight = (int)$this->config->output->resolution->y;
 
-        $imageX = (int)(-$zoom->topLeft->x / 100 * $targetWidth * 100 / $zoom->sizeInPercentage);
-        $imageY = (int)(-$zoom->topLeft->y / 100 * $targetHeight * 100 / $zoom->sizeInPercentage);
-
         $frame = $this->generateFrame($targetWidth, $targetHeight);
 
         $frame->compositeImage(
                 $this->getSourceImage($scene, $baseImageNumber, $zoom),
                 Imagick::COMPOSITE_OVER,
-                $imageX,
-                $imageY
+                0,
+                0
         );
 
         if ($overlayOpacity > .01 && $baseImageNumber < $scene->endNr) {
@@ -59,8 +55,8 @@ class RendererService
             $frame->compositeImage(
                     $overlayImage,
                     Imagick::COMPOSITE_OVER,
-                    $imageX,
-                    $imageY
+                    0,
+                    0
             );
         }
 
@@ -72,12 +68,12 @@ class RendererService
         return (int)ceil($scene->duration * $this->config->output->fps);
     }
 
-    private function calculateZoom(Zoom $startZoom, Zoom $zoomTo, float $factor): Zoom
+    private function calculateZoom(Zoom $zoomFrom, Zoom $zoomTo, float $factor): Zoom
     {
         return new Zoom(
-                $this->calculateBlend($startZoom->topLeft->y, $zoomTo->topLeft->y, $factor),
-                $this->calculateBlend($startZoom->topLeft->x, $zoomTo->topLeft->x, $factor),
-                $this->calculateBlend($startZoom->sizeInPercentage, $zoomTo->sizeInPercentage, $factor)
+                $this->calculateBlend($zoomFrom->topLeft->y, $zoomTo->topLeft->y, $factor),
+                $this->calculateBlend($zoomFrom->topLeft->x, $zoomTo->topLeft->x, $factor),
+                $this->calculateBlend($zoomFrom->sizeInPercentage, $zoomTo->sizeInPercentage, $factor)
         );
     }
 
@@ -100,9 +96,20 @@ class RendererService
         $imagePath = $this->config->srcRootPath.'/'.$this->formatFilename($scene->imageNameTemplate, $imageNr);
 
         $image = new Imagick($imagePath);
-        $targetWidth = (int)($this->config->output->resolution->x * 100 / $zoom->sizeInPercentage);
-        $targetHeight = (int)($this->config->output->resolution->y * 100 / $zoom->sizeInPercentage);
-        $image->resizeImage($targetWidth, $targetHeight, Imagick::FILTER_LANCZOS, 1);
+        $width = $image->getImageWidth();
+        $height = $image->getImageHeight();
+        $image->cropImage(
+                (int)($width * $zoom->sizeInPercentage / 100.0),
+                (int)($height * $zoom->sizeInPercentage / 100.0),
+                (int)($width * $zoom->topLeft->x / 100.0),
+                (int)($height * $zoom->topLeft->y / 100.0)
+        );
+        $image->resizeImage(
+                (int)$this->config->output->resolution->x,
+                (int)$this->config->output->resolution->y,
+                Imagick::FILTER_LANCZOS,
+                1
+        );
 
         return $image;
     }

@@ -29,13 +29,18 @@ class TimelapseGeneratorCommand extends Command
             PathService $imagePathService
     ) {
         parent::__construct();
-        $this->addArgument('config', InputArgument::REQUIRED);
-        $this->addOption('force');
-        $this->addOption('keepTempImages');
         $this->configReader = $configReader;
         $this->timelapseService = $timelapseService;
         $this->config = $config;
         $this->pathService = $imagePathService;
+    }
+
+    protected function configure()
+    {
+        parent::configure();
+        $this->addArgument('config', InputArgument::REQUIRED);
+        $this->addOption('force');
+        $this->addOption('keepTempImages');
     }
 
     /** @noinspection ReturnTypeCanBeDeclaredInspection */
@@ -55,8 +60,8 @@ class TimelapseGeneratorCommand extends Command
         $targetPath = $this->pathService->getOutputPath();
         $outputService->write('Creating target folder '.$targetPath);
 
-        $this->timelapseService->force = $input->getOption('force') !== null;
-        $this->timelapseService->keepTempImages = $input->getOption('keepTempImages') !== null;
+        $this->timelapseService->force = (bool)$input->getOption('force');
+        $this->timelapseService->keepTempImages = (bool)$input->getOption('keepTempImages');
 
         $this->timelapseService->createTimelapse($outputService);
 

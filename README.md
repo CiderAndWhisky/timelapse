@@ -125,6 +125,9 @@ The zoom is given as percentages, so the zoom will go to the area of 47 to 77% o
  vertical.
 
 Do not zoom in too much unless you have really high resolution and high quality input!
+### Zoom start / Panning
+Besides zooming in, you can also zoom from something, or combine zooming and panning to create a Ken-Burns-effect
+. Use the zoomFrom directive (optionally in combination with the zomTo directive) to crop the timelapse, pan, zoom, etc.
 
 ## Options
 * `--force` - If you run the command repeatedly it will fail the second time because the target folder already

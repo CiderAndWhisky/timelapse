@@ -19,4 +19,19 @@ class Zoom
     {
         return new Zoom(0, 0, 100);
     }
+
+    public static function empty(): Zoom
+    {
+        return new Zoom(0, 0, 0);
+    }
+
+    public function equals(Zoom $other): bool
+    {
+        return $this->topLeft->equals($other->topLeft) && $this->sizeInPercentage === $other->sizeInPercentage;
+    }
+
+    public function isEmpty(): bool
+    {
+        return $this->topLeft->x === 0.0 && $this->topLeft->y === 0.0 && $this->sizeInPercentage === 0.0;
+    }
 }

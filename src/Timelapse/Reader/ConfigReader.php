@@ -36,7 +36,12 @@ class ConfigReader
             $scene->startNr = (int)$sceneNode['start'];
             $scene->endNr = (int)$sceneNode['end'];
             $scene->imageNameTemplate = (string)$sceneNode['imageName'];
-            $scene->zoomTo = Zoom::default();
+            $scene->zoomFrom = Zoom::empty();
+            if (array_key_exists('zoomFrom', $sceneNode)) {
+                $scene->zoomFrom->topLeft = new Vector2D($sceneNode['zoomFrom']['left'], $sceneNode['zoomFrom']['top']);
+                $scene->zoomFrom->sizeInPercentage = $sceneNode['zoomFrom']['size'];
+            }
+            $scene->zoomTo = Zoom::empty();
             if (array_key_exists('zoomTo', $sceneNode)) {
                 $scene->zoomTo->topLeft = new Vector2D($sceneNode['zoomTo']['left'], $sceneNode['zoomTo']['top']);
                 $scene->zoomTo->sizeInPercentage = $sceneNode['zoomTo']['size'];
