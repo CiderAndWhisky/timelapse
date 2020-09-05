@@ -12,12 +12,14 @@ class TimelapseService
 {
     public bool $force = false;
     public bool $keepTempImages = true;
+    public int $useCPUCores;
     private ImageWriterService $imageWriterService;
     private RendererService $rendererService;
     private VideoMakerService $videoMakerService;
     private FileService $fileService;
     private PathService $imagePathService;
     private Config $config;
+    private RenderQueueService $renderQueueService;
 
     public function __construct(
             Config $config,
@@ -25,7 +27,8 @@ class TimelapseService
             RendererService $rendererService,
             VideoMakerService $videoMakerService,
             FileService $fileService,
-            PathService $imagePathService
+            PathService $imagePathService,
+            RenderQueueService $renderQueueService
     ) {
         $this->imageWriterService = $imageWriterService;
         $this->rendererService = $rendererService;
@@ -33,27 +36,22 @@ class TimelapseService
         $this->fileService = $fileService;
         $this->config = $config;
         $this->imagePathService = $imagePathService;
+        $this->renderQueueService = $renderQueueService;
     }
 
     public function createTimelapse(
             OutputServiceInterface $outputService
     ): string {
-        $this->imageWriterService->initializeOutputDirectory($this->force);
+        $this->imageWriterService->initializeOutputDirectory(
+                $this->imagePathService->getOutputPath(),
+                $this->imagePathService->getTmpPath(),
+                $this->force
+        );
 
-        $zoom = Zoom::default();
-        foreach ($this->config->scenes as $scene) {
-            $this->useZoomSettingFromLastSceneIfUnsetInScene($scene, $zoom);
-
-            $frameCount = $this->rendererService->getFramesInScene($scene);
-
-            $outputService->startProgress($scene->name, $frameCount);
-            for ($imageNr = 0; $imageNr < $frameCount; $imageNr++) {
-                $this->rendererService->renderImage($scene, $imageNr, $this->imageWriterService);
-                $outputService->onImageRendered();
-            }
-            $outputService->stopProgress();
-
-            $zoom = $scene->zoomTo->isEmpty() ? $scene->zoomFrom : $scene->zoomTo;
+        if ($this->useCPUCores > 1) {
+            $this->renderParallel($outputService);
+        } else {
+            $this->renderSerial($outputService);
         }
 
         $videoPath = $this->videoMakerService->mergeImages();
@@ -64,6 +62,87 @@ class TimelapseService
         }
 
         return $videoPath;
+    }
+
+    private function renderParallel(OutputServiceInterface $outputService): void
+    {
+        $zoom = Zoom::default();
+        $frameNumber = 1;
+        foreach ($this->config->scenes as $scene) {
+            $this->useZoomSettingFromLastSceneIfUnsetInScene($scene, $zoom);
+
+            $frameCount = $this->rendererService->getFramesInScene($scene);
+
+            for ($imageNr = 0; $imageNr < $frameCount; $imageNr++) {
+                $this->renderQueueService->addToQueue(
+                        $this->rendererService->calculateRenderInformation(
+                                $scene,
+                                $imageNr,
+                                $frameNumber++,
+                                $this->imagePathService->getTmpPath()
+                        )
+                );
+            }
+
+            $zoom = $scene->zoomTo->isEmpty() ? $scene->zoomFrom : $scene->zoomTo;
+        }
+
+        $imageCount = $this->renderQueueService->size();
+        $outputService->startProgress(
+                'Rendering images on '.$this->useCPUCores.' cores',
+                $imageCount
+        );
+        /** @var RenderThreadService */
+        $threads = [];
+        while ($this->renderQueueService->hasImagesLeft() || count($threads)) {
+            /** @var RenderThreadService $thread */
+            foreach ($threads as $threadId => $thread) {
+                if (!$thread->isRunning()) {
+                    unset($threads[$threadId]);
+                    $outputService->onImageRendered();
+                }
+            }
+            if (count($threads) < $this->useCPUCores) {
+                $renderImageInformation = $this->renderQueueService->getNext();
+                if ($renderImageInformation) {
+                    $thread = new RenderThreadService($renderImageInformation);
+                    $thread->start();
+                    $threads[] = $thread;
+                }
+            }
+            usleep(100_000);
+        }
+        $outputService->stopProgress();
+    }
+
+    /**
+     * @param OutputServiceInterface $outputService
+     */
+    protected function renderSerial(OutputServiceInterface $outputService): void
+    {
+        $zoom = Zoom::default();
+        $frameNr = 1;
+        foreach ($this->config->scenes as $scene) {
+            $this->useZoomSettingFromLastSceneIfUnsetInScene($scene, $zoom);
+
+            $frameCount = $this->rendererService->getFramesInScene($scene);
+
+            $outputService->startProgress($scene->name, $frameCount);
+            for ($imageNr = 0; $imageNr < $frameCount; $imageNr++) {
+                $frame = $this->rendererService->renderImage(
+                        $scene,
+                        $imageNr,
+                        $frameNr,
+                        $this->imagePathService->getTmpPath()
+                );
+                $this->imageWriterService->writeImage($frame, $frameNr, $this->imagePathService->getTmpPath());
+                $frameNr++;
+                $outputService->onImageRendered();
+            }
+            $outputService->stopProgress();
+
+            $zoom = $scene->zoomTo->isEmpty() ? $scene->zoomFrom : $scene->zoomTo;
+        }
     }
 
     protected function useZoomSettingFromLastSceneIfUnsetInScene(Scene $scene, Zoom $zoom): void

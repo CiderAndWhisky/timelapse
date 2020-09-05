@@ -135,3 +135,12 @@ Besides zooming in, you can also zoom from something, or combine zooming and pan
   folder is  set to '/', you might have a surprise otherwise...
 * `--keepTempImages` - By default, the temporary images rendered will be deleted after the video is created. Use this
  switch to keep them.
+* `--cores` - If set to a value greater than 1, parallel rendering will be used. This will cause a significant
+ speedup in rendering time. **WARNING**: Do not set to a higher value then the number of cores you have, rather use
+  something like 80% of your cores. Otherwise, the system might become unresponsive during rendering time!
+
+### A note on parallelisation
+For my [example video](https://www.youtube.com/watch?v=NqrSRqagNSY), the rendering time was reduced from 19 minutes
+ to less than 5 minutes using 10 of my 12 cores.
+It does not scale linearly, because it also produces I/O which cannot be used in parallel. So, experiment with the
+core count and the speedup, it depends highly on your hardware.

@@ -12,6 +12,7 @@ use Reifinger\Timelapse\Service\TimelapseService;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
+use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 
 class TimelapseGeneratorCommand extends Command
@@ -41,6 +42,13 @@ class TimelapseGeneratorCommand extends Command
         $this->addArgument('config', InputArgument::REQUIRED);
         $this->addOption('force');
         $this->addOption('keepTempImages');
+        $this->addOption(
+                'cores',
+                null,
+                InputOption::VALUE_REQUIRED,
+                'Number of CPU cores to use - should be less than the number of cores available!',
+                1
+        );
     }
 
     /** @noinspection ReturnTypeCanBeDeclaredInspection */
@@ -62,6 +70,7 @@ class TimelapseGeneratorCommand extends Command
 
         $this->timelapseService->force = (bool)$input->getOption('force');
         $this->timelapseService->keepTempImages = (bool)$input->getOption('keepTempImages');
+        $this->timelapseService->useCPUCores = (int)$input->getOption('cores');
 
         $this->timelapseService->createTimelapse($outputService);
 

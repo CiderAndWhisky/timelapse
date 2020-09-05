@@ -23,6 +23,9 @@ class ConsoleOutputService implements OutputServiceInterface
     {
         $this->io->section('Calculating '.$name);
         $this->currentProgress = $this->io->createProgressBar($frameCount);
+        $this->currentProgress->setFormat(
+                ' %current%/%max% [%bar%] %percent:3s%% %remaining:6s%/%estimated:-6s% remaining'
+        );
     }
 
     public function onImageRendered(): void

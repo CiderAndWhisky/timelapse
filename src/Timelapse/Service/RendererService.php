@@ -7,6 +7,7 @@ namespace Reifinger\Timelapse\Service;
 use Imagick;
 use ImagickPixel;
 use Reifinger\Timelapse\Model\Config;
+use Reifinger\Timelapse\Model\RenderImageInformation;
 use Reifinger\Timelapse\Model\Scene;
 use Reifinger\Timelapse\Model\Zoom;
 
@@ -20,12 +21,28 @@ class RendererService
         $this->config = $config;
     }
 
-    public function renderImage(Scene $scene, int $frameNumber, ImageWriterService $imageWriterService): void
+    public function renderImage(Scene $scene, int $sceneFrameNumber, int $frameNumber, string $targetPath): Imagick
     {
+        $renderImageInformation = $this->calculateRenderInformation(
+                $scene,
+                $sceneFrameNumber,
+                $frameNumber,
+                $targetPath
+        );
+
+        return $this->generateImage($renderImageInformation);
+    }
+
+    public function calculateRenderInformation(
+            Scene $scene,
+            int $sceneFrameNumber,
+            int $frameNumber,
+            string $targetPath
+    ): RenderImageInformation {
         $sceneImageCount = $scene->endNr - $scene->startNr + 1;
         $frameCount = $this->getFramesInScene($scene);
 
-        $progress = $frameNumber / $frameCount;
+        $progress = $sceneFrameNumber / $frameCount;
 
         $imageNumberInScene = $progress * $sceneImageCount;
         $overlayOpacity = $imageNumberInScene - (int)$imageNumberInScene;
@@ -40,18 +57,48 @@ class RendererService
         $targetWidth = (int)$this->config->output->resolution->x;
         $targetHeight = (int)$this->config->output->resolution->y;
 
-        $frame = $this->generateFrame($targetWidth, $targetHeight);
+        return new RenderImageInformation(
+                $targetWidth,
+                $targetHeight,
+                $scene->imageNameTemplate,
+                $baseImageNumber,
+                $zoom,
+                $overlayOpacity,
+                $baseImageNumber === $scene->endNr,
+                $frameNumber,
+                $this->config->srcRootPath,
+                $targetPath
+        );
+    }
+
+    public function generateImage(RenderImageInformation $renderInfo): Imagick
+    {
+        $frame = $this->generateFrameCanvas($renderInfo->targetWidth, $renderInfo->targetHeight);
 
         $frame->compositeImage(
-                $this->getSourceImage($scene, $baseImageNumber, $zoom),
+                $this->getSourceImage(
+                        $renderInfo->imageNameTemplate,
+                        $renderInfo->baseImageNumber,
+                        $renderInfo->zoom,
+                        $renderInfo->srcRootPath,
+                        $renderInfo->targetWidth,
+                        $renderInfo->targetHeight
+                ),
                 Imagick::COMPOSITE_OVER,
                 0,
                 0
         );
 
-        if ($overlayOpacity > .01 && $baseImageNumber < $scene->endNr) {
-            $overlayImage = $this->getSourceImage($scene, $baseImageNumber + 1, $zoom);
-            $overlayImage->setImageOpacity($overlayOpacity);
+        if ($renderInfo->overlayOpacity > .01 && !$renderInfo->isLastImageInScene) {
+            $overlayImage = $this->getSourceImage(
+                    $renderInfo->imageNameTemplate,
+                    $renderInfo->baseImageNumber + 1,
+                    $renderInfo->zoom,
+                    $renderInfo->srcRootPath,
+                    $renderInfo->targetWidth,
+                    $renderInfo->targetHeight
+            );
+            $overlayImage->setImageOpacity($renderInfo->overlayOpacity);
             $frame->compositeImage(
                     $overlayImage,
                     Imagick::COMPOSITE_OVER,
@@ -60,7 +107,7 @@ class RendererService
             );
         }
 
-        $imageWriterService->writeImage($frame);
+        return $frame;
     }
 
     public function getFramesInScene(Scene $scene): int
@@ -82,7 +129,7 @@ class RendererService
      * @param int $targetHeight
      * @return Imagick
      */
-    protected function generateFrame(int $targetWidth, int $targetHeight): Imagick
+    protected function generateFrameCanvas(int $targetWidth, int $targetHeight): Imagick
     {
         $frame = new Imagick();
         $frame->newImage($targetWidth, $targetHeight, new ImagickPixel("black"));
@@ -91,9 +138,15 @@ class RendererService
         return $frame;
     }
 
-    private function getSourceImage(Scene $scene, int $imageNr, Zoom $zoom): Imagick
-    {
-        $imagePath = $this->config->srcRootPath.'/'.$this->formatFilename($scene->imageNameTemplate, $imageNr);
+    private function getSourceImage(
+            string $imageNameTemplate,
+            int $imageNr,
+            Zoom $zoom,
+            string $srcRootPath,
+            int $targetWidth,
+            int $targetHeight
+    ): Imagick {
+        $imagePath = $srcRootPath.'/'.$this->formatFilename($imageNameTemplate, $imageNr);
 
         $image = new Imagick($imagePath);
         $width = $image->getImageWidth();
@@ -105,8 +158,8 @@ class RendererService
                 (int)($height * $zoom->topLeft->y / 100.0)
         );
         $image->resizeImage(
-                (int)$this->config->output->resolution->x,
-                (int)$this->config->output->resolution->y,
+                $targetWidth,
+                $targetHeight,
                 Imagick::FILTER_LANCZOS,
                 1
         );
