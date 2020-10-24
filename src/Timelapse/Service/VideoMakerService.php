@@ -37,7 +37,7 @@ class VideoMakerService
         );
         $targetFile = $this->pathService->getOutputPath().'/output.mp4';
 
-        exec('ffmpeg '.$optionsString.' '.$targetFile);
+        exec('ffmpeg '.$optionsString.' \''.$targetFile.'\'');
 
         return $targetFile;
     }

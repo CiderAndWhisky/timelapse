@@ -15,17 +15,18 @@ class ConfigReader
 {
     public function applyTo(Config $config, string $configFile): void
     {
+        $rootDir = dirname($configFile);
         $yaml = Yaml::parseFile($configFile);
         $outputValues = $yaml['output'];
 
-        $config->srcRootPath = $yaml['srcRootPath'];
+        $config->srcRootPath = $yaml['srcRootPath'] ?? $rootDir;
 
         $config->output = new VideoOutput();
-        $config->output->path = $outputValues['path'];
+        $config->output->path = $outputValues['path'] ?? $rootDir.'/output';
         $config->output->fps = $outputValues['fps'];
         $config->output->resolution = new Vector2D(
-            $outputValues['resolution']['width'],
-            $outputValues['resolution']['height']
+                $outputValues['resolution']['width'],
+                $outputValues['resolution']['height']
         );
 
         $config->scenes = [];
