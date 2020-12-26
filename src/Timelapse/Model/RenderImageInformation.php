@@ -16,6 +16,7 @@ class RenderImageInformation
     public int $frameNumber;
     public string $srcRootPath;
     public string $targetPath;
+    public ?int $timestamp;
 
     public function __construct(
             int $targetWidth,

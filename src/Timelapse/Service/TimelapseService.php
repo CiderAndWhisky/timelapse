@@ -20,6 +20,7 @@ class TimelapseService
     private PathService $imagePathService;
     private Config $config;
     private RenderQueueService $renderQueueService;
+    public string $configFile;
 
     public function __construct(
             Config $config,
@@ -105,7 +106,7 @@ class TimelapseService
             if (count($threads) < $this->useCPUCores) {
                 $renderImageInformation = $this->renderQueueService->getNext();
                 if ($renderImageInformation) {
-                    $thread = new RenderThreadService($renderImageInformation);
+                    $thread = new RenderThreadService($renderImageInformation, $this->configFile);
                     $thread->start();
                     $threads[] = $thread;
                 }
@@ -129,7 +130,7 @@ class TimelapseService
 
             $outputService->startProgress($scene->name, $frameCount);
             for ($imageNr = 0; $imageNr < $frameCount; $imageNr++) {
-                $frame = $this->rendererService->renderImage(
+                $frame = $this->rendererService->calculateAndRenderImage(
                         $scene,
                         $imageNr,
                         $frameNr,

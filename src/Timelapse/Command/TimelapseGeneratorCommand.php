@@ -72,6 +72,7 @@ class TimelapseGeneratorCommand extends Command
         $this->timelapseService->force = (bool)$input->getOption('force');
         $this->timelapseService->keepTempImages = (bool)$input->getOption('keepTempImages');
         $this->timelapseService->useCPUCores = (int)$input->getOption('cores');
+        $this->timelapseService->configFile = $configFile;
 
         $this->timelapseService->createTimelapse($outputService);
 

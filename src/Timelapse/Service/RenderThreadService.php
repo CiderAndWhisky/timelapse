@@ -11,18 +11,23 @@ class RenderThreadService
     private RenderImageInformation $renderImageInformation;
     /** @var resource */
     private $thread;
+    private string $configFile;
 
     public function __construct(
-            RenderImageInformation $renderImageInformation
-    ) {
+            RenderImageInformation $renderImageInformation,
+            string $configFile
+    )
+    {
         $this->renderImageInformation = $renderImageInformation;
+        $this->configFile = $configFile;
     }
 
     public function start(): void
     {
         $command = [
-                dirname(__DIR__, 3).'/bin/timelapse',
+                dirname(__DIR__, 3) . '/bin/timelapse',
                 'frame:render',
+                $this->configFile,
                 serialize($this->renderImageInformation),
         ];
         $descriptorspec = array(

@@ -4,24 +4,28 @@ declare(strict_types=1);
 
 namespace Reifinger\Timelapse\Service;
 
+use DateTimeImmutable;
 use Imagick;
 use ImagickPixel;
 use Reifinger\Timelapse\Model\Config;
 use Reifinger\Timelapse\Model\RenderImageInformation;
 use Reifinger\Timelapse\Model\Scene;
 use Reifinger\Timelapse\Model\Zoom;
+use Throwable;
 
 class RendererService
 {
     private Zoom $zoomFrom;
     private Config $config;
+    private WidgetPainterService $widgetPainterService;
 
-    public function __construct(Config $config)
+    public function __construct(Config $config, WidgetPainterService $widgetPainterService)
     {
         $this->config = $config;
+        $this->widgetPainterService = $widgetPainterService;
     }
 
-    public function renderImage(Scene $scene, int $sceneFrameNumber, int $frameNumber, string $targetPath): Imagick
+    public function calculateAndRenderImage(Scene $scene, int $sceneFrameNumber, int $frameNumber, string $targetPath): Imagick
     {
         $renderImageInformation = $this->calculateRenderInformation(
                 $scene,
@@ -30,7 +34,7 @@ class RendererService
                 $targetPath
         );
 
-        return $this->generateImage($renderImageInformation);
+        return $this->renderImage($renderImageInformation);
     }
 
     public function calculateRenderInformation(
@@ -38,7 +42,8 @@ class RendererService
             int $sceneFrameNumber,
             int $frameNumber,
             string $targetPath
-    ): RenderImageInformation {
+    ): RenderImageInformation
+    {
         $sceneImageCount = $scene->endNr - $scene->startNr + 1;
         $frameCount = $this->getFramesInScene($scene);
 
@@ -71,45 +76,6 @@ class RendererService
         );
     }
 
-    public function generateImage(RenderImageInformation $renderInfo): Imagick
-    {
-        $frame = $this->generateFrameCanvas($renderInfo->targetWidth, $renderInfo->targetHeight);
-
-        $frame->compositeImage(
-                $this->getSourceImage(
-                        $renderInfo->imageNameTemplate,
-                        $renderInfo->baseImageNumber,
-                        $renderInfo->zoom,
-                        $renderInfo->srcRootPath,
-                        $renderInfo->targetWidth,
-                        $renderInfo->targetHeight
-                ),
-                Imagick::COMPOSITE_OVER,
-                0,
-                0
-        );
-
-        if ($renderInfo->overlayOpacity > .01 && !$renderInfo->isLastImageInScene) {
-            $overlayImage = $this->getSourceImage(
-                    $renderInfo->imageNameTemplate,
-                    $renderInfo->baseImageNumber + 1,
-                    $renderInfo->zoom,
-                    $renderInfo->srcRootPath,
-                    $renderInfo->targetWidth,
-                    $renderInfo->targetHeight
-            );
-            $overlayImage->setImageOpacity($renderInfo->overlayOpacity);
-            $frame->compositeImage(
-                    $overlayImage,
-                    Imagick::COMPOSITE_OVER,
-                    0,
-                    0
-            );
-        }
-
-        return $frame;
-    }
-
     public function getFramesInScene(Scene $scene): int
     {
         return (int)ceil($scene->duration * $this->config->output->fps);
@@ -124,11 +90,57 @@ class RendererService
         );
     }
 
-    /**
-     * @param int $targetWidth
-     * @param int $targetHeight
-     * @return Imagick
-     */
+    private function calculateBlend(float $from, float $to, float $factor): float
+    {
+        return $from + $factor * ($to - $from);
+    }
+
+    public function renderImage(RenderImageInformation $renderInfo): Imagick
+    {
+        $frame = $this->generateFrameCanvas($renderInfo->targetWidth, $renderInfo->targetHeight);
+
+        $firstImage = $this->getSourceImage(
+                $renderInfo->imageNameTemplate,
+                $renderInfo->baseImageNumber,
+                $renderInfo->zoom,
+                $renderInfo->srcRootPath,
+                $renderInfo->targetWidth,
+                $renderInfo->targetHeight
+        );
+        $firstDate = $this->getImageDate($firstImage);
+        $secondDate = null;
+        $frame->compositeImage(
+                $firstImage,
+                Imagick::COMPOSITE_OVER,
+                0,
+                0
+        );
+
+        if ($renderInfo->overlayOpacity > .01 && !$renderInfo->isLastImageInScene) {
+            $overlayImage = $this->getSourceImage(
+                    $renderInfo->imageNameTemplate,
+                    $renderInfo->baseImageNumber + 1,
+                    $renderInfo->zoom,
+                    $renderInfo->srcRootPath,
+                    $renderInfo->targetWidth,
+                    $renderInfo->targetHeight
+            );
+            $secondDate = $this->getImageDate($overlayImage);
+            $overlayImage->setImageOpacity($renderInfo->overlayOpacity);
+            $frame->compositeImage(
+                    $overlayImage,
+                    Imagick::COMPOSITE_OVER,
+                    0,
+                    0
+            );
+        }
+        $renderInfo->timestamp = $this->calculateTimestamp($firstDate, $secondDate, $renderInfo->overlayOpacity);
+
+        $this->widgetPainterService->addWidgets($renderInfo, $frame);
+
+        return $frame;
+    }
+
     protected function generateFrameCanvas(int $targetWidth, int $targetHeight): Imagick
     {
         $frame = new Imagick();
@@ -145,8 +157,9 @@ class RendererService
             string $srcRootPath,
             int $targetWidth,
             int $targetHeight
-    ): Imagick {
-        $imagePath = $srcRootPath.'/'.$this->formatFilename($imageNameTemplate, $imageNr);
+    ): Imagick
+    {
+        $imagePath = $srcRootPath . '/' . $this->formatFilename($imageNameTemplate, $imageNr);
 
         $image = new Imagick($imagePath);
         $width = $image->getImageWidth();
@@ -167,17 +180,38 @@ class RendererService
         return $image;
     }
 
-    private function calculateBlend(float $from, float $to, float $factor): float
-    {
-        return $from + $factor * ($to - $from);
-    }
-
     private function formatFilename(string $imageNameTemplate, int $imageNr): string
     {
         preg_match('/{(\d)}/', $imageNameTemplate, $matches);
         $length = (int)$matches[1];
-        $formattedImageNr = str_pad(''.$imageNr, $length, '0', STR_PAD_LEFT);
+        $formattedImageNr = str_pad('' . $imageNr, $length, '0', STR_PAD_LEFT);
 
-        return str_replace('{'.$length.'}', $formattedImageNr, $imageNameTemplate);
+        return str_replace('{' . $length . '}', $formattedImageNr, $imageNameTemplate);
+    }
+
+    private function getImageDate(Imagick $image): ?DateTimeImmutable
+    {
+        try {
+            $imageDateProperties = $image->getImageProperties('exif:DateTime');
+            if (count($imageDateProperties) === 1) {
+                return new DateTimeImmutable($imageDateProperties['exif:DateTime']);
+            }
+
+        } catch (Throwable $t) {
+            echo sprintf('Error in Creation Date in %s', $image->getFilename());
+        }
+        return null;
+    }
+
+    private function calculateTimestamp(?DateTimeImmutable $firstDate, ?DateTimeImmutable $secondDate, float $overlayOpacity): ?int
+    {
+        if ($firstDate === null) {
+            return null;
+        }
+        if ($secondDate === null) {
+            return $firstDate->getTimestamp();
+        }
+        $diff = $secondDate->getTimestamp() - $firstDate->getTimestamp();
+        return (int)($firstDate->getTimestamp() + $diff * $overlayOpacity);
     }
 }
