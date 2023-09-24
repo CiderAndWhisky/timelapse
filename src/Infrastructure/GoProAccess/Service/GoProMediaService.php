@@ -25,6 +25,20 @@ class GoProMediaService
         ]);
     }
 
+    public function downloadLastImage(string $targetFolder): void
+    {
+        $images = $this->getImageUrls();
+        if (count($images) === 0) {
+            throw new \RuntimeException('No images found.');
+        }
+        $lastImage = $images[count($images) - 1];
+        $targetPath = $targetFolder . '/' . basename($lastImage);
+        $this->downloadImage($lastImage, $targetPath);
+    }
+
+    /**
+     * @return string[]
+     */
     public function getImageUrls(): array
     {
         // Fetch the directory listing content
@@ -68,7 +82,6 @@ class GoProMediaService
         return $imageUrls;
     }
 
-
     public function downloadImage(string $url, string $targetPath): void
     {
         if (file_exists($targetPath) && filesize($targetPath) > 0) {
@@ -78,15 +91,13 @@ class GoProMediaService
         file_put_contents($targetPath, $response->getBody()->getContents());
     }
 
-    public function downloadLastImage(string $targetPath): void
-    {
-        // Download the last image from GoPro to $targetPath
-        // Note: Implement this operation using GoPro's SDK or API
-    }
-
     public function deleteLastImage(): void
     {
-        // Delete the last image from GoPro
-        // Note: Implement this operation using GoPro's SDK or API
+        $this->apiClient->get('gp/gpControl/command/storage/delete/last');
+    }
+
+    public function deleteAllImages(): void
+    {
+        $this->apiClient->get('gp/gpControl/command/storage/delete/all');
     }
 }

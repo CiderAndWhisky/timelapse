@@ -22,10 +22,7 @@ readonly class ImageCaptureService
         while (true) {
             $this->waitUntilNextImageCapture($interval);
             $this->goProControlService->triggerPhoto();
-            sleep(3); // Wait for the image to be captured
-
-            $this->goProMediaService->downloadLastImage($folder);
-            $this->goProMediaService->deleteLastImage();
+            $this->downloadAllImages($folder);
         }
 
     }
@@ -36,5 +33,28 @@ readonly class ImageCaptureService
         $nextCaptureTime = $now - ($now % $interval) + $interval;
         $sleepTime = $nextCaptureTime - $now;
         sleep($sleepTime);
+    }
+
+    private function downloadAllImages(string $folder)
+    {
+        try {
+            $imageUrls = $this->goProMediaService->getImageUrls();
+
+            if (empty($imageUrls)) {
+                return;
+            }
+
+            foreach ($imageUrls as $url) {
+                $filename = basename($url);
+                $filepath = $folder . '/' . $filename;
+
+                $this->goProMediaService->downloadImage($url, $filepath);
+            }
+
+            $this->goProMediaService->deleteAllImages();
+        } catch (\Throwable $e) {
+            echo $e->getMessage();
+        }
+
     }
 }

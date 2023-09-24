@@ -10,16 +10,16 @@ class VideoCreatorService
                                   int    $frameRate): void
     {
         $imageFolder = realpath($imageFolder);
-        $command = sprintf(
+        if (file_exists($outputVideoFile)) {
+            unlink($outputVideoFile);
+        }
+        shell_exec(sprintf(
                 'ffmpeg -framerate %d -pattern_type glob -i \'%s/*.jpg\' -c:v libx264 %s',
                 $frameRate,
                 $imageFolder,
                 $outputVideoFile
-        );
-
-        shell_exec($command);
+        ));
         //Delete the images
-        $command = sprintf('rm %s/*.jpg', $imageFolder);
-        shell_exec($command);
+        shell_exec(sprintf('rm %s/*.jpg', $imageFolder));
     }
 }
