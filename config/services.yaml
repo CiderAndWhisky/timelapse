@@ -8,3 +8,20 @@ services:
   Reifinger\:
     resource: '../src/*'
     exclude: '../src/{DependencyInjection,Entity,Tests,Kernel.php}'
+
+  Reifinger\Infrastructure\GoProAccess\Service\GoProMediaService :
+    arguments :
+      $goproIp : '%env(GOPRO_IP)%'
+      $goproCherokeePort : '%env(GOPRO_CHEROKEE_PORT)%'
+
+
+  Symfony\Component\Console\Style\SymfonyStyle :
+    arguments :
+      $input : '@Symfony\Component\Console\Input\ArgvInput'
+      $output : '@Symfony\Component\Console\Output\ConsoleOutput'
+
+  Symfony\Component\Console\Input\ArgvInput :
+    public : true
+
+  Symfony\Component\Console\Output\ConsoleOutput :
+    public : true

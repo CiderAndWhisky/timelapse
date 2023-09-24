@@ -1,3 +1,6 @@
 /var/
 /vendor/
 /.idea/workspace.xml
+/.idea/codeception.xml
+/.idea/phpspec.xml
+/.idea/phpunit.xml
