@@ -25,7 +25,7 @@ class RenderThreadService
     public function start(): void
     {
         $command = [
-                dirname(__DIR__, 3) . '/bin/timelapse',
+                dirname(__DIR__, 3) . '/bin/console',
                 'frame:render',
                 $this->configFile,
                 serialize($this->renderImageInformation),

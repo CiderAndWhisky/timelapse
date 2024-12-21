@@ -26,7 +26,7 @@ class ProcessImageStreamCommand extends Command
     {
         $this->addArgument('imageStreamFolder', InputArgument::REQUIRED, 'The image stream folder.')
                 ->addArgument('outputFolder', InputArgument::REQUIRED, 'The output folder.')
-                ->addOption('threshold', 't', InputOption::VALUE_OPTIONAL, 'The threshold for image differences.', 0.0005);
+                ->addOption('threshold', 't', InputOption::VALUE_OPTIONAL, 'The threshold for image differences.', 0.0001);
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int

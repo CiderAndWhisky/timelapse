@@ -28,8 +28,6 @@ class ImageCaptureCommand extends Command
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $folder = $input->getArgument('folder');
-        $isoDate = date('Y-m-d');
-        $folder .= '/' . $isoDate;
 
         if (!is_dir($folder) && !mkdir($folder, 0755, true) && !is_dir($folder)) {
             $this->io->error('Could not create folder ' . $folder);

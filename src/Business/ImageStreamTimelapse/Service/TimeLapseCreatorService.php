@@ -7,9 +7,9 @@ use DateTimeImmutable;
 use Imagick;
 use Reifinger\Business\ImageStreamTimelapse\Event\EventInterface;
 
-class TimeLapseCreatorService
+readonly class TimeLapseCreatorService
 {
-    public function __construct(private readonly EventInterface $events)
+    public function __construct(private EventInterface $events)
     {
     }
 

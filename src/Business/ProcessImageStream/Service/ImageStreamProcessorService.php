@@ -10,7 +10,7 @@ class ImageStreamProcessorService
 {
     private string $lastMovedImagePath = '';
 
-    public function __construct(private readonly Filesystem $filesystem, private readonly ImageComparatorService $imageComparator)
+    public function __construct(private readonly Filesystem $filesystem, private readonly ImageComparatorService $imageComparator, private readonly UploaderService $uploaderService)
     {
     }
 
@@ -32,10 +32,12 @@ class ImageStreamProcessorService
         foreach ($imageFiles as $imagePath) {
             if ($this->shouldMoveImage($imagePath, $threshold)) {
                 $this->moveImage($imagePath, $outputFolder);
+                $this->uploaderService->upload($this->lastMovedImagePath);
             } else {
                 $this->filesystem->remove($imagePath);
             }
         }
+        echo PHP_EOL;
     }
 
     private function initializeLastMovedImage(string $outputFolder): void
@@ -54,7 +56,7 @@ class ImageStreamProcessorService
         }
 
         $difference = $this->imageComparator->compare($this->lastMovedImagePath, $imagePath);
-        echo "$imagePath: $difference" . ($difference >= $threshold ? " Moved!" : "                        ") . "      \033[1G";
+        echo "$imagePath: $difference" . ($difference >= $threshold ? "*" : "") . PHP_EOL;
         return $difference >= $threshold;
     }
 
@@ -74,6 +76,9 @@ class ImageStreamProcessorService
         }
         $targetPath = $outputFolder . '/' . $targetFilename;
 
+        if ($this->filesystem->exists($targetPath)) {
+            $this->filesystem->remove($targetPath);
+        }
         $this->filesystem->rename($sourcePath, $targetPath);
         $this->lastMovedImagePath = $targetPath;
     }

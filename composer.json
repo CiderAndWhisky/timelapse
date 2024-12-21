@@ -9,7 +9,7 @@
         }
     ],
     "require": {
-        "php": "8.2.*",
+        "php": "8.3.*",
         "ext-imagick": "*",
         "ext-xml": "*",
         "guzzlehttp/guzzle": "^7.8",

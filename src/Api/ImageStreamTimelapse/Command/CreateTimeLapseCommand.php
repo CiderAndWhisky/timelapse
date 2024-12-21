@@ -28,14 +28,14 @@ class CreateTimeLapseCommand extends Command
 
     protected function configure(): void
     {
-        $this->addArgument('inputFolder', InputArgument::REQUIRED, 'Input folder containing images')
+        $this->addArgument('inputFolder', InputArgument::REQUIRED, 'Input folder containing images. Date will be added automatically.')
                 ->addArgument('outputFolder', InputArgument::REQUIRED, 'Output folder for timelapse frames')
                 ->addOption('speedUp', null, InputOption::VALUE_OPTIONAL, 'Speed-up factor', 1440);
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
-        $inputFolder = $input->getArgument('inputFolder');
+        $inputFolder = $input->getArgument('inputFolder') . '/' . date('Y-m-d');
         $outputFolder = $input->getArgument('outputFolder');
         $speedUp = (float)$input->getOption('speedUp');
 

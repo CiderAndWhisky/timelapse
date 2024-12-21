@@ -28,3 +28,9 @@ services :
 
   Symfony\Component\Console\Output\ConsoleOutput :
     public : true
+
+  Reifinger\Business\ProcessImageStream\Service\UploaderService :
+    arguments :
+      $uploadUri : '%env(UPLOAD_URI)%'
+      $username : '%env(UPLOAD_USERNAME)%'
+      $password : '%env(UPLOAD_PASSWORD)%'

@@ -8,7 +8,7 @@ use ImagickDraw;
 use ImagickPixel;
 use Reifinger\Timelapse\Model\RenderImageInformation;
 
-class DateWidget implements WidgetInterface
+class TimeWidget implements WidgetInterface
 {
     private const POINTSIZE = 60;
     private const SHADOW_SIZE = 5;
@@ -27,7 +27,7 @@ class DateWidget implements WidgetInterface
         if (!$renderImageInformation->timestamp) {
             return;
         }
-        $date = date('Y-m-d', $renderImageInformation->timestamp);
+        $date = date('H:i:s', $renderImageInformation->timestamp);
         $draw = new ImagickDraw();
         $draw->setFillColor(new ImagickPixel('#000'));
         $draw->setFontSize(self::POINTSIZE);
@@ -35,5 +35,4 @@ class DateWidget implements WidgetInterface
         $draw->setFillColor(new ImagickPixel('#fff'));
         $frame->annotateImage($draw, $frame->getImageWidth() * $this->left / 100 - self::SHADOW_SIZE, $frame->getImageHeight() * $this->top / 100 - self::SHADOW_SIZE, 0, $date);
     }
-
 }

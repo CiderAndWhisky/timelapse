@@ -93,7 +93,6 @@ class TimelapseService
                 'Rendering images on '.$this->useCPUCores.' cores',
                 $imageCount
         );
-        /** @var RenderThreadService */
         $threads = [];
         while ($this->renderQueueService->hasImagesLeft() || count($threads)) {
             /** @var RenderThreadService $thread */
